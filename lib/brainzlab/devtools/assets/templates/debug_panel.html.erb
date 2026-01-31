@@ -97,6 +97,12 @@
         <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </span>
+
+    <button class="brainz-debug-minimize" data-action="click->devtools#minimizePanel" title="Minimize panel">
+      <svg width="12" height="12" viewBox="0 0 12 12">
+        <path d="M2 6h8" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      </svg>
+    </button>
   </div>
 
   <!-- Tabs -->
@@ -494,6 +500,11 @@
       </div>
     </div>
   </div>
+
+  <!-- Floating Restore Button (visible when minimized) -->
+  <button class="brainz-debug-restore" data-devtools-target="restoreBtn" data-action="click->devtools#restorePanel" title="Restore BrainzLab DevTools (Ctrl+Shift+B)">
+    <img src="<%= asset_url('logo.svg') %>" alt="BrainzLab" width="20" height="20">
+  </button>
 </div>
 
 <link rel="stylesheet" href="<%= asset_url('devtools.css') %>">
