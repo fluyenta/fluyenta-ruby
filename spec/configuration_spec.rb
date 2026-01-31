@@ -34,7 +34,7 @@ RSpec.describe BrainzLab::Configuration do
     end
 
     it 'raises for invalid levels' do
-      expect { config.recall_min_level = :invalid }.to raise_error(ArgumentError)
+      expect { config.recall_min_level = :invalid }.to raise_error(BrainzLab::ValidationError)
     end
   end
 

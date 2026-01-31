@@ -47,19 +47,23 @@ module BrainzLab
       def record_trace(name, started_at:, ended_at:, kind: 'request', **attributes)
         return unless enabled?
 
+        payload = build_trace_payload(name, kind, started_at, ended_at, attributes)
+
+        # In development mode, log locally instead of sending to server
+        if BrainzLab.configuration.development_mode?
+          Development.record(service: :pulse, event_type: 'trace', payload: payload)
+          return
+        end
+
         ensure_provisioned!
         return unless BrainzLab.configuration.pulse_valid?
 
-        payload = build_trace_payload(name, kind, started_at, ended_at, attributes)
         client.send_trace(payload)
       end
 
       # Record a custom metric
       def record_metric(name, value:, kind: 'gauge', tags: {})
         return unless enabled?
-
-        ensure_provisioned!
-        return unless BrainzLab.configuration.pulse_valid?
 
         payload = {
           name: name,
@@ -68,6 +72,15 @@ module BrainzLab
           timestamp: Time.now.utc.iso8601(3),
           tags: tags
         }
+
+        # In development mode, log locally instead of sending to server
+        if BrainzLab.configuration.development_mode?
+          Development.record(service: :pulse, event_type: 'metric', payload: payload)
+          return
+        end
+
+        ensure_provisioned!
+        return unless BrainzLab.configuration.pulse_valid?
 
         client.send_metric(payload)
       end

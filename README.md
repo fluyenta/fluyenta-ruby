@@ -298,6 +298,8 @@ end
 | `BRAINZLAB_SERVICE` | Service name |
 | `BRAINZLAB_APP_NAME` | App name for auto-provisioning |
 | `BRAINZLAB_DEBUG` | Enable debug logging (`true`/`false`) |
+| `BRAINZLAB_MODE` | SDK mode: `production` (default) or `development` (offline) |
+| `BRAINZLAB_DEV_DB_PATH` | SQLite database path for development mode |
 | `RECALL_URL` | Custom Recall endpoint |
 | `REFLEX_URL` | Custom Reflex endpoint |
 | `PULSE_URL` | Custom Pulse endpoint |
@@ -312,12 +314,217 @@ config.scrub_fields = [:password, :password_confirmation, :token, :api_key, :sec
 
 ## Debug Mode
 
-Enable debug mode to see SDK activity:
+Debug mode provides detailed visibility into SDK operations, including all API requests and responses with timing information. This is invaluable for troubleshooting integration issues.
+
+### Enabling Debug Mode
 
 ```ruby
-config.debug = true
-# Or set BRAINZLAB_DEBUG=true
+# In your initializer
+BrainzLab.configure do |config|
+  config.debug = true
+end
+
+# Or via environment variable
+# BRAINZLAB_DEBUG=true
 ```
+
+### Debug Output Format
+
+When debug mode is enabled, you'll see colorized output in your terminal:
+
+```
+[BrainzLab] 12:34:56 -> Recall POST /api/v1/logs (count: 5)
+[BrainzLab] 12:34:56 <- Recall 200 OK (45ms)
+
+[BrainzLab] 12:34:57 -> Reflex POST /api/v1/errors (exception: RuntimeError)
+[BrainzLab] 12:34:57 <- Reflex 201 Created (23ms)
+
+[BrainzLab] 12:34:58 -> Pulse POST /api/v1/traces (name: GET /users)
+[BrainzLab] 12:34:58 <- Pulse 200 OK (18ms)
+```
+
+The output includes:
+- Timestamp for each operation
+- Service name (Recall, Reflex, Pulse, etc.)
+- Request method and path
+- Payload summary (log count, exception type, etc.)
+- Response status code and message
+- Request duration with color coding (green < 100ms, yellow < 1s, red > 1s)
+
+### Custom Logger
+
+You can provide your own logger to capture debug output:
+
+```ruby
+BrainzLab.configure do |config|
+  config.debug = true
+  config.logger = Rails.logger
+  # Or any Logger-compatible object
+  config.logger = Logger.new('log/brainzlab.log')
+end
+```
+
+### Debug Callbacks
+
+For advanced debugging and monitoring, you can hook into SDK operations:
+
+```ruby
+BrainzLab.configure do |config|
+  # Called before each API request
+  config.on_send = ->(service, method, path, payload) {
+    Rails.logger.debug "[BrainzLab] Sending to #{service}: #{method} #{path}"
+
+    # You can use this to:
+    # - Log all outgoing requests
+    # - Send metrics to your monitoring system
+    # - Add custom tracing
+  }
+
+  # Called when an SDK error occurs
+  config.on_error = ->(error, context) {
+    Rails.logger.error "[BrainzLab] Error in #{context[:service]}: #{error.message}"
+
+    # You can use this to:
+    # - Alert on SDK failures
+    # - Track error rates
+    # - Fallback to alternative logging
+
+    # Note: This is for SDK errors, not application errors
+    # Application errors are sent to Reflex as normal
+  }
+end
+```
+
+### Programmatic Debug Logging
+
+You can also use the Debug module directly:
+
+```ruby
+# Log a debug message (only outputs when debug=true)
+BrainzLab::Debug.log("Custom message", level: :info)
+BrainzLab::Debug.log("Something went wrong", level: :error, error_code: 500)
+
+# Measure operation timing
+BrainzLab::Debug.measure(:custom, "expensive_operation") do
+  # Your code here
+end
+
+# Check if debug mode is enabled
+if BrainzLab::Debug.enabled?
+  # Perform additional debug operations
+end
+```
+
+### Debug Output Levels
+
+Debug messages are color-coded by level:
+- **DEBUG** (gray) - Verbose internal operations
+- **INFO** (cyan) - Normal operations
+- **WARN** (yellow) - Potential issues
+- **ERROR** (red) - Failed operations
+
+## Development Mode
+
+Development mode allows you to use the SDK without a BrainzLab server connection. Events are logged to stdout in a readable format and stored locally in a SQLite database.
+
+### Configuration
+
+```ruby
+# config/initializers/brainzlab.rb
+BrainzLab.configure do |config|
+  # Enable development mode (works offline)
+  config.mode = :development
+
+  # Optional: customize the SQLite database path (default: tmp/brainzlab.sqlite3)
+  config.development_db_path = 'tmp/brainzlab_dev.sqlite3'
+
+  # Other settings still apply
+  config.environment = Rails.env
+  config.service = 'my-app'
+end
+```
+
+Or use the environment variable:
+
+```bash
+export BRAINZLAB_MODE=development
+```
+
+### Features
+
+In development mode:
+
+- **No server connection required** - Works completely offline
+- **Stdout logging** - All events are pretty-printed to the console with colors
+- **Local storage** - Events are stored in SQLite at `tmp/brainzlab.sqlite3`
+- **Queryable** - Use `BrainzLab.development_events` to query stored events
+
+### Querying Events
+
+```ruby
+# Get all events
+events = BrainzLab.development_events
+
+# Filter by service
+logs = BrainzLab.development_events(service: :recall)
+errors = BrainzLab.development_events(service: :reflex)
+traces = BrainzLab.development_events(service: :pulse)
+
+# Filter by event type
+BrainzLab.development_events(event_type: 'log')
+BrainzLab.development_events(event_type: 'error')
+BrainzLab.development_events(event_type: 'trace')
+
+# Filter by time
+BrainzLab.development_events(since: 1.hour.ago)
+
+# Limit results
+BrainzLab.development_events(limit: 10)
+
+# Combine filters
+BrainzLab.development_events(
+  service: :recall,
+  since: 30.minutes.ago,
+  limit: 50
+)
+
+# Get stats by service
+BrainzLab.development_stats
+# => { recall: 42, reflex: 3, pulse: 15 }
+
+# Clear all stored events
+BrainzLab.clear_development_events!
+```
+
+### Console Output
+
+In development mode, events are pretty-printed to stdout:
+
+```
+[14:32:15.123] [RECALL] log [INFO] User signed up
+  user_id: 123
+  data: {email: "user@example.com"}
+
+[14:32:16.456] [REFLEX] error RuntimeError: Something went wrong
+  error_class: "RuntimeError"
+  environment: "development"
+  request_id: "abc-123"
+
+[14:32:17.789] [PULSE] trace GET /users (45.2ms)
+  request_method: "GET"
+  request_path: "/users"
+  status: 200
+  db_ms: 12.3
+```
+
+### Use Cases
+
+Development mode is useful for:
+
+- **Local development** without setting up a BrainzLab account
+- **Testing** SDK integration in CI/CD pipelines
+- **Debugging** to inspect exactly what events would be sent
+- **Offline development** when working without internet access
 
 ## Self-Hosted
 

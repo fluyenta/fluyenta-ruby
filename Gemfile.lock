@@ -1,9 +1,10 @@
 PATH
   remote: .
   specs:
-    brainzlab (0.1.9)
+    brainzlab (0.1.11)
       concurrent-ruby (~> 1.0)
       logger (~> 1.5)
+      sqlite3 (~> 2.0)
 
 GEM
   remote: https://rubygems.org/
@@ -23,6 +24,7 @@ GEM
     lefthook (2.0.13)
     lint_roller (1.1.0)
     logger (1.7.0)
+    mini_portile2 (2.8.9)
     parallel (1.27.0)
     parser (3.3.10.0)
       ast (~> 2.4.1)
@@ -65,6 +67,9 @@ GEM
       lint_roller (~> 1.1)
       rubocop (~> 1.81)
     ruby-progressbar (1.13.0)
+    sqlite3 (2.9.0)
+      mini_portile2 (~> 2.8.0)
+    sqlite3 (2.9.0-arm64-darwin)
     unicode-display_width (3.2.0)
       unicode-emoji (~> 4.1)
     unicode-emoji (4.2.0)

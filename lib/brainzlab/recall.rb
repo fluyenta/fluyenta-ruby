@@ -31,14 +31,24 @@ module BrainzLab
       def log(level, message, **data)
         config = BrainzLab.configuration
         return unless config.recall_effectively_enabled?
+        return unless config.level_enabled?(level)
+
+        entry = build_entry(level, message, data)
+
+        # Log debug output for the operation
+        log_debug_operation(level, message, data)
+
+        # In development mode, log locally instead of sending to server
+        if config.development_mode?
+          Development.record(service: :recall, event_type: 'log', payload: entry)
+          return
+        end
 
         # Auto-provision project on first log if app_name is configured
         ensure_provisioned!
 
-        return unless config.level_enabled?(level)
         return unless config.valid?
 
-        entry = build_entry(level, message, data)
         buffer.push(entry)
       end
 
@@ -152,6 +162,13 @@ module BrainzLab
             key_str == field.to_s.downcase
           end
         end
+      end
+
+      def log_debug_operation(level, message, data)
+        return unless BrainzLab::Debug.enabled?
+
+        truncated_message = message.to_s.length > 50 ? "#{message.to_s[0..47]}..." : message.to_s
+        BrainzLab::Debug.log_operation(:recall, "#{level.to_s.upcase} \"#{truncated_message}\"", **data.slice(*data.keys.first(3)))
       end
     end
   end

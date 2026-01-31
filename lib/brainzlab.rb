@@ -1,7 +1,21 @@
 # frozen_string_literal: true
 
+# BrainzLab SDK - Official Ruby SDK for BrainzLab products
+#
+# For testing utilities, require 'brainzlab/testing' in your test helper:
+#
+#   require 'brainzlab/testing'
+#
+#   RSpec.configure do |config|
+#     config.include BrainzLab::Testing::Helpers
+#   end
+#
+# See BrainzLab::Testing for more details.
+
 require_relative 'brainzlab/version'
+require_relative 'brainzlab/errors'
 require_relative 'brainzlab/configuration'
+require_relative 'brainzlab/debug'
 require_relative 'brainzlab/context'
 require_relative 'brainzlab/recall'
 require_relative 'brainzlab/reflex'
@@ -18,6 +32,7 @@ require_relative 'brainzlab/sentinel'
 require_relative 'brainzlab/synapse'
 require_relative 'brainzlab/instrumentation'
 require_relative 'brainzlab/utilities'
+require_relative 'brainzlab/development'
 
 module BrainzLab
   class << self
@@ -45,6 +60,7 @@ module BrainzLab
       Dendrite.reset!
       Sentinel.reset!
       Synapse.reset!
+      Development.reset!
     end
 
     # Context management
@@ -92,6 +108,32 @@ module BrainzLab
     # Check if debug mode is enabled
     def debug?
       configuration.debug?
+    end
+
+    # Query events stored in development mode
+    # @param service [Symbol, nil] filter by service (:recall, :reflex, :pulse, etc.)
+    # @param event_type [String, nil] filter by event type ('log', 'error', 'trace', etc.)
+    # @param since [Time, nil] filter events after this time
+    # @param limit [Integer] max number of events to return (default: 100)
+    # @return [Array<Hash>] matching events
+    # @example
+    #   BrainzLab.development_events                              # All events
+    #   BrainzLab.development_events(service: :recall)            # Only Recall logs
+    #   BrainzLab.development_events(service: :reflex, limit: 10) # Last 10 errors
+    #   BrainzLab.development_events(since: 1.hour.ago)           # Events from last hour
+    def development_events(service: nil, event_type: nil, since: nil, limit: 100)
+      Development.events(service: service, event_type: event_type, since: since, limit: limit)
+    end
+
+    # Clear all events stored in development mode
+    def clear_development_events!
+      Development.clear!
+    end
+
+    # Get stats about stored development events
+    # @return [Hash] counts by service
+    def development_stats
+      Development.stats
     end
 
     # Health check - verifies connectivity to all enabled services

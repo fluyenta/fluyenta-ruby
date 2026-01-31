@@ -98,18 +98,65 @@ module BrainzLab
         when Net::HTTPSuccess
           JSON.parse(response.body, symbolize_names: true)
         when Net::HTTPUnauthorized
-          { error: 'Unauthorized: Invalid API key' }
+          structured_error = AuthenticationError.new(
+            'Invalid API key',
+            hint: 'Verify your Vision API key is correct and has not expired.',
+            code: 'vision_unauthorized'
+          )
+          log_error(path, structured_error)
+          { error: structured_error.message, brainzlab_error: structured_error }
         when Net::HTTPForbidden
-          { error: 'Forbidden: Vision is not enabled for this project' }
+          structured_error = AuthenticationError.new(
+            'Vision is not enabled for this project',
+            hint: 'Enable Vision in your project settings or check your permissions.',
+            code: 'vision_forbidden'
+          )
+          log_error(path, structured_error)
+          { error: structured_error.message, brainzlab_error: structured_error }
         when Net::HTTPNotFound
-          { error: "Not found: #{path}" }
+          structured_error = NotFoundError.new(
+            "Vision endpoint not found: #{path}",
+            hint: 'Verify the Vision service is properly configured.',
+            code: 'vision_not_found',
+            resource_type: 'endpoint',
+            resource_id: path
+          )
+          log_error(path, structured_error)
+          { error: structured_error.message, brainzlab_error: structured_error }
+        when Net::HTTPTooManyRequests
+          structured_error = RateLimitError.new(
+            'Vision rate limit exceeded',
+            retry_after: response['Retry-After']&.to_i,
+            code: 'vision_rate_limit'
+          )
+          log_error(path, structured_error)
+          { error: structured_error.message, brainzlab_error: structured_error }
         else
-          { error: "HTTP #{response.code}: #{response.message}" }
+          structured_error = ErrorHandler.from_response(response, service: 'Vision', operation: path)
+          log_error(path, structured_error)
+          { error: structured_error.message, brainzlab_error: structured_error }
         end
       rescue JSON::ParserError => e
-        { error: "Invalid JSON response: #{e.message}" }
+        structured_error = ServerError.new(
+          "Invalid JSON response from Vision: #{e.message}",
+          hint: 'The Vision service returned an unexpected response format.',
+          code: 'vision_invalid_response'
+        )
+        log_error(path, structured_error)
+        { error: structured_error.message, brainzlab_error: structured_error }
       rescue StandardError => e
-        { error: "Request failed: #{e.message}" }
+        structured_error = ErrorHandler.wrap(e, service: 'Vision', operation: path)
+        log_error(path, structured_error)
+        { error: structured_error.message, brainzlab_error: structured_error }
+      end
+
+      def log_error(operation, error)
+        BrainzLab.debug_log("[Vision::Client] #{operation} failed: #{error.message}")
+
+        # Call on_error callback if configured
+        if @config.on_error
+          @config.on_error.call(error, { service: 'Vision', operation: operation })
+        end
       end
 
       def auth_key

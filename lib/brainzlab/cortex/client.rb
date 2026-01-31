@@ -132,7 +132,27 @@ module BrainzLab
       end
 
       def log_error(operation, error)
-        BrainzLab.debug_log("[Cortex::Client] #{operation} failed: #{error.message}")
+        structured_error = ErrorHandler.wrap(error, service: 'Cortex', operation: operation)
+        BrainzLab.debug_log("[Cortex::Client] #{operation} failed: #{structured_error.message}")
+
+        # Call on_error callback if configured
+        if @config.on_error
+          @config.on_error.call(structured_error, { service: 'Cortex', operation: operation })
+        end
+      end
+
+      def handle_response_error(response, operation)
+        return if response.is_a?(Net::HTTPSuccess) || response.is_a?(Net::HTTPCreated) || response.is_a?(Net::HTTPNoContent)
+
+        structured_error = ErrorHandler.from_response(response, service: 'Cortex', operation: operation)
+        BrainzLab.debug_log("[Cortex::Client] #{operation} failed: #{structured_error.message}")
+
+        # Call on_error callback if configured
+        if @config.on_error
+          @config.on_error.call(structured_error, { service: 'Cortex', operation: operation })
+        end
+
+        structured_error
       end
     end
   end

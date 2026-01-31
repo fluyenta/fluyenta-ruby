@@ -15,14 +15,23 @@ module BrainzLab
         return if excluded?(exception)
         return if sampled_out?
 
-        # Auto-provision project on first capture if app_name is configured
-        ensure_provisioned!
-
-        return unless BrainzLab.configuration.reflex_valid?
+        # Log debug output for the operation
+        log_debug_capture(exception)
 
         payload = build_payload(exception, context)
         payload = run_before_send(payload, exception)
         return if payload.nil?
+
+        # In development mode, log locally instead of sending to server
+        if BrainzLab.configuration.development_mode?
+          Development.record(service: :reflex, event_type: 'error', payload: payload)
+          return
+        end
+
+        # Auto-provision project on first capture if app_name is configured
+        ensure_provisioned!
+
+        return unless BrainzLab.configuration.reflex_valid?
 
         client.send_error(payload)
       end
@@ -32,14 +41,23 @@ module BrainzLab
         return if capture_disabled?
         return if sampled_out?
 
-        # Auto-provision project on first capture if app_name is configured
-        ensure_provisioned!
-
-        return unless BrainzLab.configuration.reflex_valid?
+        # Log debug output for the operation
+        log_debug_message(message, level)
 
         payload = build_message_payload(message, level, context)
         payload = run_before_send(payload, nil)
         return if payload.nil?
+
+        # In development mode, log locally instead of sending to server
+        if BrainzLab.configuration.development_mode?
+          Development.record(service: :reflex, event_type: 'message', payload: payload)
+          return
+        end
+
+        # Auto-provision project on first capture if app_name is configured
+        ensure_provisioned!
+
+        return unless BrainzLab.configuration.reflex_valid?
 
         client.send_error(payload)
       end
@@ -383,6 +401,20 @@ module BrainzLab
         else
           frame
         end
+      end
+
+      def log_debug_capture(exception)
+        return unless BrainzLab::Debug.enabled?
+
+        truncated_message = exception.message.to_s.length > 40 ? "#{exception.message.to_s[0..37]}..." : exception.message.to_s
+        BrainzLab::Debug.log_operation(:reflex, "capture #{exception.class.name}: \"#{truncated_message}\"")
+      end
+
+      def log_debug_message(message, level)
+        return unless BrainzLab::Debug.enabled?
+
+        truncated_message = message.to_s.length > 40 ? "#{message.to_s[0..37]}..." : message.to_s
+        BrainzLab::Debug.log_operation(:reflex, "message [#{level.to_s.upcase}] \"#{truncated_message}\"")
       end
     end
   end

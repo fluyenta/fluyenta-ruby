@@ -7,6 +7,9 @@ module BrainzLab
     # recall_min_level has a custom setter with validation
     attr_reader :recall_min_level
 
+    # mode has a custom setter with validation
+    attr_reader :mode
+
     attr_accessor :secret_key,
                   :environment,
                   :service,
@@ -106,6 +109,8 @@ module BrainzLab
                   :synapse_auto_provision,
                   :scrub_fields,
                   :logger,
+                  :on_error,
+                  :on_send,
                   :instrument_http,
                   :instrument_active_record,
                   :instrument_redis,
@@ -150,7 +155,9 @@ module BrainzLab
                   :devtools_asset_path,
                   :devtools_panel_position,
                   :devtools_expand_by_default,
-                  :rails_instrumentation_handled_externally
+                  :rails_instrumentation_handled_externally,
+                  :development_db_path,
+                  :development_log_output
 
     # Services that should not track themselves to avoid circular dependencies
     SELF_TRACKING_SERVICES = {
@@ -179,6 +186,13 @@ module BrainzLab
 
       # Debug mode - enables verbose logging
       @debug = ENV['BRAINZLAB_DEBUG'] == 'true'
+
+      # SDK mode - :production (default) or :development (offline, local storage)
+      @mode = ENV['BRAINZLAB_MODE']&.to_sym || :production
+
+      # Development mode settings
+      @development_db_path = ENV['BRAINZLAB_DEV_DB_PATH'] || 'tmp/brainzlab.sqlite3'
+      @development_log_output = $stdout
 
       # Disable self-tracking - prevents services from tracking to themselves
       # e.g., Recall won't log to itself, Reflex won't track errors to itself
@@ -306,6 +320,12 @@ module BrainzLab
       # Internal logger for debugging SDK issues
       @logger = nil
 
+      # Debug callbacks
+      # Called when an SDK error occurs (lambda/proc receiving error object and context hash)
+      @on_error = nil
+      # Called before each API request (lambda/proc receiving service, method, path, and payload)
+      @on_send = nil
+
       # Instrumentation
       @instrument_http = true # Enable HTTP client instrumentation (Net::HTTP, Faraday, HTTParty)
       @instrument_active_record = true # AR breadcrumbs for Reflex
@@ -363,9 +383,38 @@ module BrainzLab
 
     def recall_min_level=(level)
       level = level.to_sym
-      raise ArgumentError, "Invalid level: #{level}" unless LEVELS.include?(level)
+      unless LEVELS.include?(level)
+        raise ValidationError.new(
+          "Invalid log level: #{level}",
+          hint: "Valid log levels are: #{LEVELS.join(', ')}",
+          code: 'invalid_log_level',
+          field: 'recall_min_level',
+          context: { provided: level, valid_values: LEVELS }
+        )
+      end
 
       @recall_min_level = level
+    end
+
+    MODES = %i[production development].freeze
+
+    def mode=(mode)
+      mode = mode.to_sym
+      unless MODES.include?(mode)
+        raise ValidationError.new(
+          "Invalid mode: #{mode}",
+          hint: "Valid modes are: #{MODES.join(', ')}. Use :development for offline mode with local storage.",
+          code: 'invalid_mode',
+          field: 'mode',
+          context: { provided: mode, valid_values: MODES }
+        )
+      end
+
+      @mode = mode
+    end
+
+    def development_mode?
+      @mode == :development
     end
 
     def level_enabled?(level)

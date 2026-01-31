@@ -54,7 +54,7 @@ module BrainzLab
         case @state
         when :open
           track_rejected
-          raise CircuitOpenError, "Circuit '#{@name}' is open" unless fallback
+          raise CircuitOpenError.new(@name, failure_count: @failure_count, last_failure_at: @last_failure_at) unless fallback
 
           fallback.respond_to?(:call) ? fallback.call : fallback
 
@@ -65,7 +65,15 @@ module BrainzLab
 
       # Force the circuit to a specific state
       def force_state!(new_state)
-        raise ArgumentError, "Invalid state: #{new_state}" unless STATES.include?(new_state)
+        unless STATES.include?(new_state)
+          raise BrainzLab::ValidationError.new(
+            "Invalid circuit breaker state: #{new_state}",
+            hint: "Valid states are: #{STATES.join(', ')}",
+            code: 'invalid_circuit_state',
+            field: 'state',
+            context: { provided: new_state, valid_values: STATES }
+          )
+        end
 
         @mutex.synchronize do
           @state = new_state
@@ -255,7 +263,28 @@ module BrainzLab
       end
 
       # Error raised when circuit is open
-      class CircuitOpenError < StandardError; end
+      # Inherits from BrainzLab::ServiceUnavailableError for structured error handling
+      class CircuitOpenError < BrainzLab::ServiceUnavailableError
+        attr_reader :circuit_name, :failure_count, :last_failure_at
+
+        def initialize(circuit_name, failure_count: nil, last_failure_at: nil)
+          @circuit_name = circuit_name
+          @failure_count = failure_count
+          @last_failure_at = last_failure_at
+
+          super(
+            "Circuit '#{circuit_name}' is open",
+            hint: 'The circuit breaker has tripped due to repeated failures. The service will be retried automatically after the recovery timeout.',
+            code: 'circuit_open',
+            service_name: circuit_name,
+            context: {
+              circuit_name: circuit_name,
+              failure_count: failure_count,
+              last_failure_at: last_failure_at&.iso8601
+            }.compact
+          )
+        end
+      end
     end
   end
 end
