@@ -27,6 +27,49 @@
   --brainz-mono: "SF Mono", "Monaco", "Inconsolata", "Fira Code", "Droid Sans Mono", monospace;
   --brainz-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --brainz-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+  /* Panel-specific variables (light mode) */
+  --brainz-panel-bg: white;
+  --brainz-panel-surface: #FAFAFA;
+  --brainz-panel-surface-alt: #F5F5F5;
+  --brainz-panel-text: #1A1A1A;
+  --brainz-panel-text-muted: #6B7280;
+  --brainz-panel-border: #E5E5E5;
+}
+
+/* ============================================
+   DARK MODE SUPPORT
+   ============================================ */
+html.dark {
+  --brainz-cream-50: #111111;
+  --brainz-cream-100: #161616;
+  --brainz-cream-200: #1c1c1c;
+  --brainz-cream-300: #262626;
+  --brainz-text: #e4e4e4;
+  --brainz-text-muted: #a3a3a3;
+  --brainz-text-light: #737373;
+  --brainz-border: #262626;
+  --brainz-border-dark: #333333;
+  --brainz-error: #f87171;
+  --brainz-error-light: rgba(248, 113, 113, 0.15);
+  --brainz-success: #4ade80;
+  --brainz-success-light: rgba(74, 222, 128, 0.15);
+  --brainz-warning: #fbbf24;
+  --brainz-warning-light: rgba(251, 191, 36, 0.15);
+  --brainz-info: #60a5fa;
+  --brainz-info-light: rgba(96, 165, 250, 0.15);
+  --brainz-code-bg: #000000;
+  --brainz-code-text: #e4e4e4;
+  --brainz-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --brainz-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+
+  /* Panel-specific variables (dark mode - terminal inspired) */
+  --brainz-panel-bg: #0a0a0a;
+  --brainz-panel-surface: #111111;
+  --brainz-panel-surface-alt: #161616;
+  --brainz-panel-text: #e4e4e4;
+  --brainz-panel-text-muted: #737373;
+  --brainz-panel-border: #262626;
 }
 
 /* ============================================
