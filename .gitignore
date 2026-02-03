@@ -22,3 +22,6 @@ pkg/
 
 # Temporary files
 /tmp/
+
+# Secrets (NEVER commit)
+.secrets.md
