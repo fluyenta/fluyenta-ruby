@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.13] - 2026-02-24
+
+### Fixed
+
+- **Rails LogFormatter** - Fix `TypeError: wrong element type Hash at 0 (expected array)` in `format_params_toml`
+  - `hash_like?` incorrectly matched Arrays (they respond to `to_h` and `each`), causing `Array#to_h` to fail when params contained arrays of hashes
+
 ## [0.1.1] - 2025-12-23
 
 ### Fixed

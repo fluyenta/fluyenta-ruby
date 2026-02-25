@@ -641,7 +641,7 @@ module BrainzLab
       end
 
       def hash_like?(obj)
-        obj.is_a?(Hash) || (obj.respond_to?(:to_h) && obj.respond_to?(:each))
+        obj.is_a?(Hash) || (!obj.is_a?(Array) && obj.respond_to?(:to_h) && obj.respond_to?(:each))
       end
 
       def format_params_toml(params, prefix = '', depth = 0)
