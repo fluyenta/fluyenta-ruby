@@ -19,11 +19,6 @@ module BrainzLab
         end
       end
 
-      initializer 'brainzlab.view_helpers' do
-        require_relative 'view_helpers'
-        ActionView::Base.include BrainzLab::Rails::ViewHelpers
-      end
-
       initializer 'brainzlab.configure_rails_initialization' do |app|
         # Set defaults from Rails
         BrainzLab.configure do |config|
