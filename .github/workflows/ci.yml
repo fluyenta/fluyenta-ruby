@@ -53,4 +53,4 @@ jobs:
         run: bin/rubocop -f github
 
       - name: Check gem build
-        run: gem build brainzlab.gemspec
+        run: gem build fluyenta-ruby.gemspec
