@@ -38,6 +38,7 @@ module BrainzLab
           return false unless DevTools.debug_panel_enabled?
           return false unless DevTools.allowed_environment?
           return false unless DevTools.allowed_ip?(extract_ip(env))
+          return false if env['REQUEST_METHOD'] == 'OPTIONS'
           return false if asset_request?(env['PATH_INFO'])
           return false if devtools_asset_request?(env['PATH_INFO'])
           return false if turbo_stream_request?(env)

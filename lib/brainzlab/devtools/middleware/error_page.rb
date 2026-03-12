@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'json'
+
 module BrainzLab
   module DevTools
     module Middleware
@@ -10,29 +12,33 @@ module BrainzLab
         end
 
         def call(env)
+          return @app.call(env) if env['REQUEST_METHOD'] == 'OPTIONS'
           return @app.call(env) unless should_handle?(env)
 
           begin
             status, headers, body = @app.call(env)
 
             # Check if this is an error response that we should intercept
-            if status >= 400 && html_response?(headers) && !json_request?(env)
+            if status >= 400 && html_response?(headers) && !json_request?(env) && !api_path?(env)
               # Check if this looks like Rails' default error page
               body_content = collect_body(body)
               if body_content.include?('Action Controller: Exception caught') || body_content.include?('background: #C00')
                 # Extract exception info from the page
                 exception_info = extract_exception_from_html(body_content)
                 if exception_info
-                  data = collect_debug_data_from_info(env, exception_info)
-                  return render_error_page_from_info(exception_info, data)
+                  data = collect_debug_data_from_info(env, exception_info, status)
+                  return render_error_page_from_info(exception_info, data, status)
                 end
               end
             end
 
             [status, headers, body]
           rescue Exception => e
-            # Don't intercept if request wants JSON
-            return raise_exception(e) if json_request?(env)
+            # For JSON/API requests, return a proper JSON error response
+            if json_request?(env) || api_path?(env)
+              capture_to_reflex(e)
+              return json_error_response(e)
+            end
 
             # Still capture to Reflex if available
             capture_to_reflex(e)
@@ -87,7 +93,7 @@ module BrainzLab
              .gsub('&nbsp;', ' ')
         end
 
-        def collect_debug_data_from_info(env, info)
+        def collect_debug_data_from_info(env, info, status = 500)
           context = defined?(BrainzLab::Context) ? BrainzLab::Context.current : nil
           collector_data = Data::Collector.get_request_data
 
@@ -113,7 +119,7 @@ module BrainzLab
           }
         end
 
-        def render_error_page_from_info(info, data)
+        def render_error_page_from_info(info, data, status = 500)
           # Create a simple exception-like object
           exception = StandardError.new(info[:message])
           exception.define_singleton_method(:class) do
@@ -126,7 +132,7 @@ module BrainzLab
           html = @renderer.render(exception, data)
 
           [
-            500,
+            status,
             {
               'Content-Type' => 'text/html; charset=utf-8',
               'Content-Length' => html.bytesize.to_s,
@@ -167,6 +173,48 @@ module BrainzLab
           accept.include?('application/json') ||
             content_type.include?('application/json') ||
             env['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest'
+        end
+
+        def api_path?(env)
+          path = env['PATH_INFO'] || ''
+          path.start_with?('/api/')
+        end
+
+        def exception_to_status(exception)
+          case exception.class.name
+          when 'ActionController::RoutingError', 'AbstractController::ActionNotFound'
+            404
+          when 'ActionController::MethodNotAllowed'
+            405
+          when 'ActionController::BadRequest', 'ActionDispatch::Http::Parameters::ParseError'
+            400
+          when 'ActionController::UnknownFormat'
+            406
+          else
+            500
+          end
+        end
+
+        def json_error_response(exception)
+          status_code = exception_to_status(exception)
+          message = case status_code
+                    when 400 then 'Bad request'
+                    when 404 then 'Not found'
+                    when 405 then 'Method not allowed'
+                    when 406 then 'Not acceptable'
+                    else 'Internal server error'
+                    end
+
+          body = JSON.generate({ error: message })
+          [
+            status_code,
+            {
+              'Content-Type' => 'application/json; charset=utf-8',
+              'Content-Length' => body.bytesize.to_s,
+              'X-Content-Type-Options' => 'nosniff'
+            },
+            [body]
+          ]
         end
 
         def capture_to_reflex(exception)

@@ -18,6 +18,7 @@ module BrainzLab
 
         def call(env)
           return @app.call(env) unless DevTools.enabled?
+          return @app.call(env) if env['REQUEST_METHOD'] == 'OPTIONS'
 
           path = env['PATH_INFO']
           asset_prefix = DevTools.asset_path

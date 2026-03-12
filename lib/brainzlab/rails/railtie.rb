@@ -223,7 +223,11 @@ module BrainzLab
         context.request_method = request.request_method
         context.request_path = request.path
         context.request_url = request.url
-        context.request_params = filter_params(request.params.to_h)
+        context.request_params = begin
+          filter_params(request.params.to_h)
+        rescue ActionDispatch::Http::Parameters::ParseError
+          {}
+        end
         context.request_headers = extract_headers(env)
 
         # Add breadcrumb for request start

@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    fluyenta-ruby (0.1.14)
+    fluyenta-ruby (0.1.15)
       concurrent-ruby (~> 1.0)
       logger (~> 1.5)
       sqlite3 (~> 2.0)
