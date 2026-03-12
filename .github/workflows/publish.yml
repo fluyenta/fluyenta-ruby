@@ -26,7 +26,7 @@ jobs:
       - name: Build gem
         id: build
         run: |
-          gem build brainzlab.gemspec
+          gem build fluyenta-ruby.gemspec
           echo "gem_name=$(ls *.gem)" >> $GITHUB_OUTPUT
 
       - name: Upload gem artifact
