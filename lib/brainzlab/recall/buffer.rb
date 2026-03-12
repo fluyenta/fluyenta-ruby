@@ -19,7 +19,9 @@ module BrainzLab
 
       def push(log_entry)
         @buffer.push(log_entry)
-        flush if @buffer.size >= @config.recall_buffer_size
+        # Skip synchronous flush during instrumentation to avoid blocking the host app.
+        # The background flush thread will send these entries within recall_flush_interval seconds.
+        flush if @buffer.size >= @config.recall_buffer_size && !BrainzLab.instrumenting?
       end
 
       def flush

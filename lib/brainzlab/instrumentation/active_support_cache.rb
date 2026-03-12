@@ -43,8 +43,10 @@ module BrainzLab
         # ============================================
         def install_cache_read_subscriber!
           ActiveSupport::Notifications.subscribe('cache_read.active_support') do |*args|
-            event = ActiveSupport::Notifications::Event.new(*args)
-            handle_cache_read(event)
+            BrainzLab.with_instrumentation_guard do
+              event = ActiveSupport::Notifications::Event.new(*args)
+              handle_cache_read(event)
+            end
           end
         end
 
@@ -76,8 +78,10 @@ module BrainzLab
         # ============================================
         def install_cache_read_multi_subscriber!
           ActiveSupport::Notifications.subscribe('cache_read_multi.active_support') do |*args|
-            event = ActiveSupport::Notifications::Event.new(*args)
-            handle_cache_read_multi(event)
+            BrainzLab.with_instrumentation_guard do
+              event = ActiveSupport::Notifications::Event.new(*args)
+              handle_cache_read_multi(event)
+            end
           end
         end
 
@@ -122,8 +126,10 @@ module BrainzLab
         # ============================================
         def install_cache_write_subscriber!
           ActiveSupport::Notifications.subscribe('cache_write.active_support') do |*args|
-            event = ActiveSupport::Notifications::Event.new(*args)
-            handle_cache_write(event)
+            BrainzLab.with_instrumentation_guard do
+              event = ActiveSupport::Notifications::Event.new(*args)
+              handle_cache_write(event)
+            end
           end
         end
 
@@ -150,8 +156,10 @@ module BrainzLab
         # ============================================
         def install_cache_write_multi_subscriber!
           ActiveSupport::Notifications.subscribe('cache_write_multi.active_support') do |*args|
-            event = ActiveSupport::Notifications::Event.new(*args)
-            handle_cache_write_multi(event)
+            BrainzLab.with_instrumentation_guard do
+              event = ActiveSupport::Notifications::Event.new(*args)
+              handle_cache_write_multi(event)
+            end
           end
         end
 
@@ -186,8 +194,10 @@ module BrainzLab
         # ============================================
         def install_cache_delete_subscriber!
           ActiveSupport::Notifications.subscribe('cache_delete.active_support') do |*args|
-            event = ActiveSupport::Notifications::Event.new(*args)
-            handle_cache_delete(event)
+            BrainzLab.with_instrumentation_guard do
+              event = ActiveSupport::Notifications::Event.new(*args)
+              handle_cache_delete(event)
+            end
           end
         end
 
@@ -211,8 +221,10 @@ module BrainzLab
         # ============================================
         def install_cache_exist_subscriber!
           ActiveSupport::Notifications.subscribe('cache_exist?.active_support') do |*args|
-            event = ActiveSupport::Notifications::Event.new(*args)
-            handle_cache_exist(event)
+            BrainzLab.with_instrumentation_guard do
+              event = ActiveSupport::Notifications::Event.new(*args)
+              handle_cache_exist(event)
+            end
           end
         end
 
@@ -236,8 +248,10 @@ module BrainzLab
         # ============================================
         def install_cache_fetch_hit_subscriber!
           ActiveSupport::Notifications.subscribe('cache_fetch_hit.active_support') do |*args|
-            event = ActiveSupport::Notifications::Event.new(*args)
-            handle_cache_fetch_hit(event)
+            BrainzLab.with_instrumentation_guard do
+              event = ActiveSupport::Notifications::Event.new(*args)
+              handle_cache_fetch_hit(event)
+            end
           end
         end
 
@@ -264,8 +278,10 @@ module BrainzLab
         # ============================================
         def install_cache_generate_subscriber!
           ActiveSupport::Notifications.subscribe('cache_generate.active_support') do |*args|
-            event = ActiveSupport::Notifications::Event.new(*args)
-            handle_cache_generate(event)
+            BrainzLab.with_instrumentation_guard do
+              event = ActiveSupport::Notifications::Event.new(*args)
+              handle_cache_generate(event)
+            end
           end
         end
 
@@ -312,8 +328,10 @@ module BrainzLab
         # ============================================
         def install_cache_increment_subscriber!
           ActiveSupport::Notifications.subscribe('cache_increment.active_support') do |*args|
-            event = ActiveSupport::Notifications::Event.new(*args)
-            handle_cache_increment(event)
+            BrainzLab.with_instrumentation_guard do
+              event = ActiveSupport::Notifications::Event.new(*args)
+              handle_cache_increment(event)
+            end
           end
         end
 
@@ -349,8 +367,10 @@ module BrainzLab
         # ============================================
         def install_cache_decrement_subscriber!
           ActiveSupport::Notifications.subscribe('cache_decrement.active_support') do |*args|
-            event = ActiveSupport::Notifications::Event.new(*args)
-            handle_cache_decrement(event)
+            BrainzLab.with_instrumentation_guard do
+              event = ActiveSupport::Notifications::Event.new(*args)
+              handle_cache_decrement(event)
+            end
           end
         end
 
@@ -386,8 +406,10 @@ module BrainzLab
         # ============================================
         def install_cache_delete_multi_subscriber!
           ActiveSupport::Notifications.subscribe('cache_delete_multi.active_support') do |*args|
-            event = ActiveSupport::Notifications::Event.new(*args)
-            handle_cache_delete_multi(event)
+            BrainzLab.with_instrumentation_guard do
+              event = ActiveSupport::Notifications::Event.new(*args)
+              handle_cache_delete_multi(event)
+            end
           end
         end
 
@@ -422,8 +444,10 @@ module BrainzLab
         # ============================================
         def install_cache_delete_matched_subscriber!
           ActiveSupport::Notifications.subscribe('cache_delete_matched.active_support') do |*args|
-            event = ActiveSupport::Notifications::Event.new(*args)
-            handle_cache_delete_matched(event)
+            BrainzLab.with_instrumentation_guard do
+              event = ActiveSupport::Notifications::Event.new(*args)
+              handle_cache_delete_matched(event)
+            end
           end
         end
 
@@ -466,8 +490,10 @@ module BrainzLab
         # ============================================
         def install_cache_cleanup_subscriber!
           ActiveSupport::Notifications.subscribe('cache_cleanup.active_support') do |*args|
-            event = ActiveSupport::Notifications::Event.new(*args)
-            handle_cache_cleanup(event)
+            BrainzLab.with_instrumentation_guard do
+              event = ActiveSupport::Notifications::Event.new(*args)
+              handle_cache_cleanup(event)
+            end
           end
         end
 
@@ -502,8 +528,10 @@ module BrainzLab
         # ============================================
         def install_cache_prune_subscriber!
           ActiveSupport::Notifications.subscribe('cache_prune.active_support') do |*args|
-            event = ActiveSupport::Notifications::Event.new(*args)
-            handle_cache_prune(event)
+            BrainzLab.with_instrumentation_guard do
+              event = ActiveSupport::Notifications::Event.new(*args)
+              handle_cache_prune(event)
+            end
           end
         end
 
@@ -552,8 +580,10 @@ module BrainzLab
         # ============================================
         def install_message_serializer_fallback_subscriber!
           ActiveSupport::Notifications.subscribe('message_serializer_fallback.active_support') do |*args|
-            event = ActiveSupport::Notifications::Event.new(*args)
-            handle_message_serializer_fallback(event)
+            BrainzLab.with_instrumentation_guard do
+              event = ActiveSupport::Notifications::Event.new(*args)
+              handle_message_serializer_fallback(event)
+            end
           end
         end
 

@@ -6,6 +6,12 @@ module BrainzLab
       def install!
         config = BrainzLab.configuration
 
+        # Skip all instrumentation if SDK is disabled
+        unless config.enabled?
+          BrainzLab.debug_log('[Instrumentation] SDK disabled via BRAINZLAB_SDK_ENABLED=false, skipping all instrumentation')
+          return
+        end
+
         # Skip Rails-specific instrumentation if brainzlab-rails gem is handling it
         # This prevents double-tracking of events
         if config.rails_instrumentation_handled_externally

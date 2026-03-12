@@ -82,7 +82,13 @@ module BrainzLab
         ensure_provisioned!
         return unless BrainzLab.configuration.pulse_valid?
 
-        client.send_metric(payload)
+        if BrainzLab.instrumenting?
+          # During instrumentation, send in background thread to avoid
+          # blocking the host app with synchronous HTTP
+          Thread.new { client.send_metric(payload) }
+        else
+          client.send_metric(payload)
+        end
       end
 
       # Convenience methods for metrics

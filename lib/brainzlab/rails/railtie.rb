@@ -55,6 +55,12 @@ module BrainzLab
       end
 
       config.after_initialize do
+        # Skip all SDK initialization if disabled
+        unless BrainzLab.configuration.enabled?
+          BrainzLab.debug_log('[Railtie] SDK disabled via BRAINZLAB_SDK_ENABLED=false, skipping initialization')
+          next
+        end
+
         # Set up custom log formatter
         BrainzLab::Rails::Railtie.setup_log_formatter if BrainzLab.configuration.log_formatter_enabled
 

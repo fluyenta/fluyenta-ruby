@@ -35,7 +35,32 @@ require_relative 'brainzlab/utilities'
 require_relative 'brainzlab/development'
 
 module BrainzLab
+  # Thread-local re-entrancy guard for instrumentation.
+  # When true, SDK operations that would make HTTP calls are skipped
+  # to prevent recursive instrumentation from blocking the host app.
+  INSTRUMENTING_KEY = :brainzlab_instrumenting
+
   class << self
+    # Returns true when inside an instrumentation handler.
+    # Used by Recall.log, Pulse.record_metric, etc. to skip HTTP calls
+    # that would block the host app during notification callbacks.
+    def instrumenting?
+      Thread.current[INSTRUMENTING_KEY] == true
+    end
+
+    # Executes a block within the instrumentation guard.
+    # Prevents recursive/cascading SDK HTTP calls from instrumentation handlers.
+    def with_instrumentation_guard
+      return if Thread.current[INSTRUMENTING_KEY]
+
+      Thread.current[INSTRUMENTING_KEY] = true
+      begin
+        yield
+      ensure
+        Thread.current[INSTRUMENTING_KEY] = nil
+      end
+    end
+
     def configure
       yield(configuration) if block_given?
       configuration

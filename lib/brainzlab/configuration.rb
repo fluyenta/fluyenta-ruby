@@ -10,7 +10,8 @@ module BrainzLab
     # mode has a custom setter with validation
     attr_reader :mode
 
-    attr_accessor :secret_key,
+    attr_accessor :enabled,
+                  :secret_key,
                   :environment,
                   :service,
                   :host,
@@ -157,7 +158,7 @@ module BrainzLab
                   :devtools_expand_by_default,
                   :rails_instrumentation_handled_externally,
                   :development_db_path,
-                  :development_log_output,
+                  :development_log_output
 
     # Services that should not track themselves to avoid circular dependencies
     SELF_TRACKING_SERVICES = {
@@ -169,6 +170,9 @@ module BrainzLab
     }.freeze
 
     def initialize
+      # SDK enabled flag — set BRAINZLAB_SDK_ENABLED=false to completely disable
+      @enabled = ENV.fetch('BRAINZLAB_SDK_ENABLED', 'true') != 'false'
+
       # Authentication
       @secret_key = ENV.fetch('BRAINZLAB_SECRET_KEY', nil)
 
@@ -422,7 +426,11 @@ module BrainzLab
     end
 
     def valid?
-      !@secret_key.nil? && !@secret_key.empty?
+      @enabled && !@secret_key.nil? && !@secret_key.empty?
+    end
+
+    def enabled?
+      @enabled == true
     end
 
     def reflex_valid?
@@ -537,8 +545,24 @@ module BrainzLab
       @debug == true
     end
 
+    # Returns hostnames of all configured SDK service URLs
+    # Used by Net::HTTP instrumentation to skip tracking SDK's own HTTP calls
+    def sdk_service_hosts
+      @sdk_service_hosts ||= begin
+        urls = [
+          @recall_url, @reflex_url, @pulse_url, @flux_url,
+          @signal_url, @vault_url, @vision_url, @cortex_url,
+          @beacon_url, @nerve_url, @dendrite_url, @sentinel_url,
+          @synapse_url
+        ].compact
+
+        urls.filter_map { |url| URI.parse(url).host rescue nil }.uniq
+      end
+    end
+
     # Check if recall is effectively enabled (considering self-tracking)
     def recall_effectively_enabled?
+      return false unless @enabled
       return false unless @recall_enabled
       return true unless @disable_self_tracking
 
@@ -549,6 +573,7 @@ module BrainzLab
 
     # Check if reflex is effectively enabled (considering self-tracking)
     def reflex_effectively_enabled?
+      return false unless @enabled
       return false unless @reflex_enabled
       return true unless @disable_self_tracking
 
@@ -559,6 +584,7 @@ module BrainzLab
 
     # Check if pulse is effectively enabled (considering self-tracking)
     def pulse_effectively_enabled?
+      return false unless @enabled
       return false unless @pulse_enabled
       return true unless @disable_self_tracking
 
@@ -569,6 +595,7 @@ module BrainzLab
 
     # Check if flux is effectively enabled (considering self-tracking)
     def flux_effectively_enabled?
+      return false unless @enabled
       return false unless @flux_enabled
       return true unless @disable_self_tracking
 
@@ -579,6 +606,7 @@ module BrainzLab
 
     # Check if signal is effectively enabled (considering self-tracking)
     def signal_effectively_enabled?
+      return false unless @enabled
       return false unless @signal_enabled
       return true unless @disable_self_tracking
 

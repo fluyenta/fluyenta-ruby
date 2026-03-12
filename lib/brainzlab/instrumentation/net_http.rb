@@ -63,6 +63,9 @@ module BrainzLab
 
         def should_track?
           return false unless BrainzLab.configuration.instrument_http
+          # Skip tracking SDK's own HTTP calls to its service endpoints
+          # to prevent recursive cascading (SDK HTTP → track → Recall.debug → buffer → flush → SDK HTTP → ...)
+          return false if BrainzLab.configuration.sdk_service_hosts.include?(address)
 
           ignore_hosts = BrainzLab.configuration.http_ignore_hosts || []
           !ignore_hosts.include?(address)
@@ -82,22 +85,24 @@ module BrainzLab
           duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at) * 1000).round(2)
           level = error || (status && status >= 400) ? :error : :info
 
-          # Add breadcrumb for Reflex
-          if BrainzLab.configuration.reflex_enabled
-            BrainzLab::Reflex.add_breadcrumb(
-              "#{method} #{url}",
-              category: 'http',
-              level: level,
-              data: { method: method, url: url, status_code: status, duration_ms: duration_ms, error: error }.compact
-            )
-          end
+          BrainzLab.with_instrumentation_guard do
+            # Add breadcrumb for Reflex (in-memory, safe)
+            if BrainzLab.configuration.reflex_enabled
+              BrainzLab::Reflex.add_breadcrumb(
+                "#{method} #{url}",
+                category: 'http',
+                level: level,
+                data: { method: method, url: url, status_code: status, duration_ms: duration_ms, error: error }.compact
+              )
+            end
 
-          # Log to Recall at debug level (avoid noise)
-          if BrainzLab.configuration.recall_enabled
-            BrainzLab::Recall.debug(
-              "HTTP #{method} #{url} -> #{status || 'ERROR'}",
-              method: method, url: url, status_code: status, duration_ms: duration_ms, error: error
-            )
+            # Log to Recall at debug level (skipped if already instrumenting)
+            if BrainzLab.configuration.recall_enabled
+              BrainzLab::Recall.debug(
+                "HTTP #{method} #{url} -> #{status || 'ERROR'}",
+                method: method, url: url, status_code: status, duration_ms: duration_ms, error: error
+              )
+            end
           end
         rescue StandardError => e
           # Don't let instrumentation errors crash the app
