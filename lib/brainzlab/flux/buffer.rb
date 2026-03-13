@@ -76,7 +76,7 @@ module BrainzLab
 
         @client.send_batch(events: events, metrics: metrics)
       rescue StandardError => e
-        BrainzLab.debug("[Flux] Batch send failed: #{e.message}")
+        BrainzLab.debug_log("[Flux] Batch send failed: #{e.message}")
       end
 
       def start_flush_thread
@@ -86,7 +86,7 @@ module BrainzLab
             begin
               flush! if size.positive?
             rescue StandardError => e
-              BrainzLab.debug("[Flux] Flush thread error: #{e.message}")
+              BrainzLab.debug_log("[Flux] Flush thread error: #{e.message}")
             end
           end
         end

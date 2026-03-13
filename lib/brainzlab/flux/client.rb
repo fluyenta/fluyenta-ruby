@@ -48,11 +48,11 @@ module BrainzLab
 
         response = http.request(request)
 
-        BrainzLab.debug("[Flux] Request failed: #{response.code} - #{response.body}") unless response.is_a?(Net::HTTPSuccess)
+        BrainzLab.debug_log("[Flux] Request failed: #{response.code} - #{response.body}") unless response.is_a?(Net::HTTPSuccess)
 
         response
       rescue StandardError => e
-        BrainzLab.debug("[Flux] Request error: #{e.message}")
+        BrainzLab.debug_log("[Flux] Request error: #{e.message}")
         nil
       end
 
