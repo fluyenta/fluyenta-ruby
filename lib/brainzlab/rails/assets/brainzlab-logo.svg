@@ -1,0 +1,10 @@
+<svg width="160" height="40" viewBox="0 0 160 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Icon background -->
+  <rect width="36" height="36" y="2" rx="8" fill="#a3e635"/>
+  <!-- Flask -->
+  <path d="M13 7h10v1H13V7z" fill="#2d2d2d"/>
+  <path d="M15 8h6v9l6.75 11.25a2.25 2.25 0 01-1.95 3.375H10.2a2.25 2.25 0 01-1.95-3.375L15 17V8z" fill="white" stroke="#2d2d2d" stroke-width="1.8" stroke-linejoin="round"/>
+  <path d="M15 17h6" stroke="#2d2d2d" stroke-width="1.2" stroke-linecap="round"/>
+  <!-- Text -->
+  <text x="44" y="26" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="17" font-weight="600" fill="#1a1a1a" letter-spacing="-0.3">Brainz Lab</text>
+</svg>
