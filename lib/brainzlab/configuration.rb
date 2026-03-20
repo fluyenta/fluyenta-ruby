@@ -158,9 +158,7 @@ module BrainzLab
                   :devtools_expand_by_default,
                   :rails_instrumentation_handled_externally,
                   :development_db_path,
-                  :development_log_output,
-                  :logo_light_url,
-                  :logo_dark_url
+                  :development_log_output
 
     # Services that should not track themselves to avoid circular dependencies
     SELF_TRACKING_SERVICES = {
@@ -380,11 +378,6 @@ module BrainzLab
       @devtools_asset_path = '/__brainzlab__'
       @devtools_panel_position = 'bottom-right'
       @devtools_expand_by_default = false
-
-      # Branding / Logo
-      # BRAINZLAB_SITE → SVG logo handled by view helper, these are only for img fallback
-      @logo_light_url = ENV['BRAINZLAB_LOGO_LIGHT_URL'] || '/fluyenta-logo-light.png'
-      @logo_dark_url  = ENV['BRAINZLAB_LOGO_DARK_URL']  || '/fluyenta-logo-dark.png'
 
       # Rails instrumentation delegation
       # When true, brainzlab-rails gem handles Rails-specific instrumentation
